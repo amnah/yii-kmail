@@ -108,7 +108,7 @@ class KMailBase extends CApplicationComponent{
         // check for dry run mode (don't send any actual mail)
         if ($this->dryRun) {
             // log message and return count
-            $this->logMessage($message, $sendBatch, array());
+            $this->logMessage($message, $sendBatch);
             return count($message->getTo());
         }
 
@@ -162,7 +162,7 @@ class KMailBase extends CApplicationComponent{
      * @param array $failures
      * @return string
      */
-    protected function logMessage($message, $sendBatch, $failures) {
+    protected function logMessage($message, $sendBatch, $failures = array()) {
         // count addresses
         $totals = array(
             $message->getTo() ? count($message->getTo()) : 0,
@@ -173,7 +173,7 @@ class KMailBase extends CApplicationComponent{
         $failuresCount = count($failures);
         $successCount = $totalCount - $failuresCount;
 
-        // add in test mode in beginning
+        // add in dryRun and batch info first
         $logText  = $this->dryRun ? "(Dry) " : "";
         $logText .= $sendBatch ? "(Batch mode) " : "";
 
