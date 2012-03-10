@@ -1,6 +1,6 @@
 <?php
 
-class KMailBase extends CApplicationComponent {
+class KMailBase extends CApplicationComponent{
 
     /**
      * Transport for mailing
@@ -32,12 +32,12 @@ class KMailBase extends CApplicationComponent {
     protected $_mailer;
 
     /**
-     * Init
      * Registers Swift Mailer's autoloaders
      * Create swift transport and swift mailer object
      */
     public function init() {
         // register swift's autoloader
+//        require_once dirname(__FILE__) . '/swiftmailer/lib/swift_required.php';
         require_once dirname(__FILE__) . '/swiftmailer/lib/classes/Swift.php';
         Yii::registerAutoloader(array('Swift','autoload'));
         require_once dirname(__FILE__). '/swiftmailer/lib/swift_init.php';
@@ -59,9 +59,6 @@ class KMailBase extends CApplicationComponent {
 
         // set swift mailer object
         $this->_mailer = Swift_Mailer::newInstance($transport);
-
-        // call parent
-        parent::init();
     }
 
     /**
@@ -70,7 +67,7 @@ class KMailBase extends CApplicationComponent {
      * @param bool $returnString
      * @return mixed string or array, depending on return type
      */
-    public function get_headers($message, $returnString = true) {
+    protected function get_headers($message, $returnString = true) {
 
         // get headers in string
 //        $headers_string = $message->toString(); // should use this, but the one below has better ordering
@@ -103,16 +100,15 @@ class KMailBase extends CApplicationComponent {
      * Helper to send a message normally or in batch (aka, sending individual emails to each user)
      * Also, potentially handle failures
      * @param Swift_Mime_Message $message
-     * @param bool $send_batch
+     * @param bool $sendBatch
      * @return int
      */
-    public function send($message, $send_batch = false) {
+    protected function send($message, $sendBatch = false) {
 
-        // log message
-        $this->logMessage($message, $send_batch);
-
-        // return count if test mode is enabled (don't send any actual mail)
+        // check for dry run mode (don't send any actual mail)
         if ($this->dryRun) {
+            // log message and return count
+            $this->logMessage($message, $sendBatch, array());
             return count($message->getTo());
         }
 
@@ -121,7 +117,7 @@ class KMailBase extends CApplicationComponent {
         $failures = array();
 
         // send email normally
-        if (!$send_batch) {
+        if (!$sendBatch) {
             $num_sent = $this->_mailer->send($message, $failures);
         }
         // send in batch
@@ -137,82 +133,10 @@ class KMailBase extends CApplicationComponent {
             }
         }
 
-        // process failures and return number sent
+        // process failures, log message, and return count
         $this->processFailures($failures);
+        $this->logMessage($message, $sendBatch, $failures);
         return $num_sent;
-    }
-
-    /**
-     * Renders a view file for an email
-     * Example:
-     *      $message->setBody($this->renderView("activation", array("user"=>$user, "profile"=>$profile)));
-     *
-     * @param $view
-     * @param array $data
-     * @return string
-     */
-    protected function renderView($view, $data = array()) {
-
-        // render partial for normal operation
-        if(isset(Yii::app()->controller)) {
-            return Yii::app()->controller->renderPartial("{$this->viewPath}.{$view}", $data, true);
-        }
-
-        // render internal for console apps
-        // taken from YiiMail, thanks!
-
-
-        // if Yii::app()->controller doesn't exist create a dummy
-        // controller to render the view (needed in the console app)
-
-        // renderPartial won't work with CConsoleApplication, so use
-        // renderInternal - this requires that we use an actual path to the
-        // view rather than the usual alias
-        else {
-            $actualPath = Yii::getPathOfAlias("{$this->viewPath}.{$view}") . ".php";
-            $controller = new CController(get_called_class());
-            return $controller->renderInternal($actualPath, $data, true);
-        }
-    }
-
-    /**
-     * Logs message text
-     * @param Swift_Mime_Message $message
-     * @return string
-     */
-    protected function logMessage($message) {
-        // get actual email addresses (not names)
-        $addresses = array();
-        $to = $message->getTo();
-        foreach ($to as $address => $name) {
-            $addresses[] = is_int($address) ? $name : $address;
-        }
-
-        // set limit and count how many addresses
-        $limit = 10;
-        $count = count($addresses);
-
-        // display all emails if under limit
-        if ($count <= $limit) {
-            $toText = implode(",", $addresses);
-        }
-        // display up to limit
-        else {
-            $addresses = array_slice($addresses, 0, $limit);
-            $num_more = $count - $limit;
-            $toText = implode(",", $addresses) . " and $num_more more";
-        }
-
-        // add in test mode in beginning
-        $logText  = $this->dryRun ? "(Test Mode) " : "";
-
-        // log the text
-        $logText .= "Sending email to $toText.\n";
-        $logText .= $this->get_headers($message)."\n";
-        $logText .= $message->getBody();
-        Yii::log($logText, CLogger::LEVEL_INFO, get_called_class());
-
-        return $logText;
     }
 
     /**
@@ -231,5 +155,68 @@ class KMailBase extends CApplicationComponent {
         }
     }
 
+    /**
+     * Logs message text
+     * @param Swift_Mime_Message $message
+     * @param bool $sendBatch
+     * @param array $failures
+     * @return string
+     */
+    protected function logMessage($message, $sendBatch, $failures) {
+        // count addresses
+        $totals = array(
+            $message->getTo() ? count($message->getTo()) : 0,
+            $message->getCc() ? count($message->getCc()) : 0,
+            $message->getBcc() ? count($message->getBcc()) : 0,
+        );
+        $totalCount = array_sum($totals);
+        $failuresCount = count($failures);
+        $successCount = $totalCount - $failuresCount;
 
+        // add in test mode in beginning
+        $logText  = $this->dryRun ? "(Dry) " : "";
+        $logText .= $sendBatch ? "(Batch mode) " : "";
+
+        // log the text
+        $logText .= "KMail send total - $totalCount email(s).\r\n";
+        $logText .= "Successful - $successCount.\r\n";
+        $logText .= ($failuresCount ? "Failures - $failuresCount.\r\n" : "");
+        $logText .= "-----------------------------------------\r\n";
+        $logText .= $this->get_headers($message)."\r\n";
+        $logText .= $message->getBody();
+
+        Yii::log($logText, CLogger::LEVEL_INFO, get_called_class());
+
+        return $logText;
+    }
+
+    /**
+     * Renders a view file for an email
+     * Example:
+     *      $message->setBody($this->renderView("activation", array("user"=>$user, "profile"=>$profile)));
+     *
+     * @param $view
+     * @param array $data
+     * @return string
+     */
+    protected function renderView($view, $data = array()) {
+
+        // render partial for normal operation
+        if(isset(Yii::app()->controller)) {
+            return Yii::app()->controller->renderPartial("{$this->viewPath}.{$view}", $data, true);
+        }
+        else {
+            // taken from YiiMail, thanks!
+
+            // if Yii::app()->controller doesn't exist create a dummy
+            // controller to render the view (needed in the console app)
+
+            // renderPartial won't work with CConsoleApplication, so use
+            // renderInternal - this requires that we use an actual path to the
+            // view rather than the usual alias
+            $actualPath = Yii::getPathOfAlias("{$this->viewPath}.{$view}") . ".php";
+            $controller = new CController(get_called_class());
+            return $controller->renderInternal($actualPath, $data, true);
+        }
+    }
 }
