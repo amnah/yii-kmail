@@ -81,6 +81,7 @@ class KMailBase extends CApplicationComponent{
         $headersExplode = explode("\r\n", $headersString);
 
         // move type into key
+        $headersArray = array();
         foreach ($headersExplode as $header) {
             // skip if empty
             if (!$header) {
@@ -97,6 +98,20 @@ class KMailBase extends CApplicationComponent{
     }
 
     /**
+     * Counts the the total number of recipients of the email message
+     * @param Swift_Message $message
+     * @return int
+     */
+    protected function countMessageTotal($message) {
+        $totals = array(
+            $message->getTo() ? count($message->getTo()) : 0,
+            $message->getCc() ? count($message->getCc()) : 0,
+            $message->getBcc() ? count($message->getBcc()) : 0,
+        );
+        return array_sum($totals);
+    }
+
+    /**
      * Helper to send a message normally or in batch (aka, sending individual emails to each user)
      * Also, potentially handle failures
      * @param Swift_Mime_Message $message
@@ -109,7 +124,7 @@ class KMailBase extends CApplicationComponent{
         if ($this->dryRun) {
             // log message and return count
             $this->logMessage($message, $sendBatch);
-            return count($message->getTo());
+            return $this->countMessageTotal($message);
         }
 
         // keep track of emails send and failures
@@ -134,7 +149,9 @@ class KMailBase extends CApplicationComponent{
         }
 
         // process failures, log message, and return count
-        $this->processFailures($failures);
+        if ($failures) {
+            $this->processFailures($failures);
+        }
         $this->logMessage($message, $sendBatch, $failures);
         return $num_sent;
     }
@@ -148,11 +165,9 @@ class KMailBase extends CApplicationComponent{
      * @param $failures
      */
     protected function processFailures($failures) {
-        if ($failures) {
-            $numFailures = count($failures);
-            $addressText = $numFailures == 1 ? "address" : "addresses";
-            Yii::app()->user->setFlash("error", "Error: Could not send email to $numFailures $addressText.");
-        }
+        $numFailures = count($failures);
+        $addressText = $numFailures == 1 ? "address" : "addresses";
+        Yii::app()->user->setFlash("error", "Error: Could not send email to $numFailures $addressText.");
     }
 
     /**
@@ -164,23 +179,16 @@ class KMailBase extends CApplicationComponent{
      */
     protected function logMessage($message, $sendBatch, $failures = array()) {
         // count addresses
-        $totals = array(
-            $message->getTo() ? count($message->getTo()) : 0,
-            $message->getCc() ? count($message->getCc()) : 0,
-            $message->getBcc() ? count($message->getBcc()) : 0,
-        );
-        $totalCount = array_sum($totals);
+        $totalCount = $this->countMessageTotal($message);
         $failuresCount = count($failures);
         $successCount = $totalCount - $failuresCount;
 
         // add in dryRun and batch info first
-        $logText  = $this->dryRun ? "(Dry) " : "";
+        $logText  = $this->dryRun ? "(Dry run) " : "";
         $logText .= $sendBatch ? "(Batch mode) " : "";
 
         // log the text
-        $logText .= "KMail send total - $totalCount email(s).\r\n";
-        $logText .= "Successful - $successCount.\r\n";
-        $logText .= ($failuresCount ? "Failures - $failuresCount.\r\n" : "");
+        $logText .= "KMail [ Total $totalCount ] [ Success: $successCount ] [ Fail: $failuresCount ] \r\n";
         $logText .= "-----------------------------------------\r\n";
         $logText .= $this->get_headers($message)."\r\n";
         $logText .= $message->getBody();
