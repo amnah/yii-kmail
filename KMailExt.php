@@ -1,7 +1,7 @@
 <?php
 
 // require base class
-Yii::app()->import("application.extensions.kmail.KMail");
+require_once dirname(__FILE__) . '/KMail.php';
 
 class KMailExt extends Kmail {
 
