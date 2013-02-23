@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Yii email factory extension using the swiftmailer library
+ *
+ * @author amnah
+ * @link https://github.com/amnah/yii-kmail
+ * @link http://swiftmailer.org/
+ */
 class KMail extends CApplicationComponent{
 
     /**
@@ -17,7 +24,7 @@ class KMail extends CApplicationComponent{
     /**
      * View path for rendering content
      */
-    public $viewPath = "application.views.mail";
+    public $viewPath = "application.views.kmail";
 
     /**
      * Enable/disable sending actual emails
