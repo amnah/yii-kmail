@@ -6,6 +6,7 @@ Yii email extension (wrapper for swiftmailer)
 ## Installation
 
 * Extract files into **protected/extensions/kmail**
+* Copy file **protected/extensions/kmail/KMailExt** to **protected/extensions/KMailExt**
 * Add configuration:
 
 ```php
