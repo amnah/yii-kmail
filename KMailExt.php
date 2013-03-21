@@ -1,7 +1,7 @@
 <?php
 
 // require base class
-require_once dirname(__FILE__) . '/KMail.php';
+require_once dirname(__FILE__) . '/kmail/KMail.php';
 
 class KMailExt extends Kmail {
 
