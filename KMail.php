@@ -43,11 +43,12 @@ class KMail extends CApplicationComponent{
      * Create swift transport and swift mailer object
      */
     public function init() {
+
         // register swift's autoloader
-//        require_once dirname(__FILE__) . '/swift/lib/swift_required.php';
         require_once dirname(__FILE__) . '/swift/lib/classes/Swift.php';
         Yii::registerAutoloader(array('Swift','autoload'));
         require_once dirname(__FILE__). '/swift/lib/swift_init.php';
+//        require_once dirname(__FILE__) . '/swift/lib/swift_required.php';
 
         // set transport to php
         if (strtolower($this->transportType) == "php") {
@@ -64,7 +65,7 @@ class KMail extends CApplicationComponent{
             }
         }
 
-        // set swift mailer object
+        // create and set swift mailer object
         $this->_mailer = Swift_Mailer::newInstance($transport);
     }
 
@@ -220,18 +221,19 @@ class KMail extends CApplicationComponent{
         if(isset(Yii::app()->controller)) {
             return Yii::app()->controller->renderPartial("{$this->viewPath}.{$view}", $data, true);
         }
-        else {
-            // taken from YiiMail, thanks!
 
-            // if Yii::app()->controller doesn't exist create a dummy
-            // controller to render the view (needed in the console app)
+        // render internal for console applications
+        // taken from YiiMail, thanks!
+        // https://code.google.com/p/yii-mail/source/browse/trunk/YiiMailMessage.php
 
-            // renderPartial won't work with CConsoleApplication, so use
-            // renderInternal - this requires that we use an actual path to the
-            // view rather than the usual alias
-            $actualPath = Yii::getPathOfAlias("{$this->viewPath}.{$view}") . ".php";
-            $controller = new CController(get_called_class());
-            return $controller->renderInternal($actualPath, $data, true);
-        }
+        // if Yii::app()->controller doesn't exist create a dummy
+        // controller to render the view (needed in the console app)
+
+        // renderPartial won't work with CConsoleApplication, so use
+        // renderInternal - this requires that we use an actual path to the
+        // view rather than the usual alias
+        $actualPath = Yii::getPathOfAlias("{$this->viewPath}.{$view}") . ".php";
+        $controller = new CController(get_called_class());
+        return $controller->renderInternal($actualPath, $data, true);
     }
 }

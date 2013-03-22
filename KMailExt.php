@@ -1,7 +1,15 @@
 <?php
 
 // require base class
-require_once dirname(__FILE__) . '/kmail/KMail.php';
+// check if this file is outside the extension folder
+if (file_exists(dirname(__FILE__) . '/kmail/KMail.php')) {
+    require_once dirname(__FILE__) . '/kmail/KMail.php';
+}
+// check if this file is within the extension folder
+elseif (file_exists(dirname(__FILE__) . '/KMail.php')) {
+    require_once dirname(__FILE__) . '/KMail.php';
+}
+
 
 class KMailExt extends Kmail {
 
@@ -18,14 +26,35 @@ class KMailExt extends Kmail {
     }
 
     /**
-     * Sends activation email to user after registration
-     * @param $user
-     * @param $profile
+     * Send test message
+     * @param string $to
+     * @param string $messageSubject
+     * @param string $messageBody
+     */
+    public function sendTestEmail($to, $messageSubject, $messageBody) {
+        $message = $this->getMessageTemplate();
+        $message->setSubject($messageSubject);
+        $message->setBody($messageBody);
+        $message->setTo($to);
+        $this->send($message);
+    }
+
+    /**
+     * Example for using view template
+     * @param User $user
+     * @param User_profile $profile
      */
     public function sendEmailActivationKey($user, $profile) {
+
+        // note that this uses the view based on $this->viewPath
+        $body = $this->renderView("activation", array(
+            "user"=>$user,
+            "profile"=>$profile
+        ));
+
         $message = $this->getMessageTemplate();
-        $message->setSubject('Registration Activation');
-        $message->setBody($this->renderView("activation", array("user"=>$user, "profile"=>$profile)));
+        $message->setSubject('Email Activation');
+        $message->setBody($body);
         $message->setTo($user->email);
         $this->send($message);
     }
