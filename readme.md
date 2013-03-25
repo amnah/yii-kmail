@@ -18,7 +18,8 @@ Follows singleton pattern to simplify email handling throughout the entire app
 
         // optional configurations
         'viewPath'         => 'application.views.kmail', // path for view-based email templates
-        'dryRun'           => false,
+        'dryRun'           => false, // testing option.
+                                     // if 'dryRun' == true, then it will NOT send out real emails
 
         'transportType'    => "php", // or "smtp"
         /* uncomment and modify the following if using smtp
