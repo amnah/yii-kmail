@@ -7,18 +7,18 @@ Follows singleton pattern to simplify email handling throughout the entire app
 ## Installation
 
 * Extract files into **protected/extensions/kmail**
-* Copy file **protected/extensions/kmail/KMailExt.php** to **protected/extensions/KMailExt.php**
+* Copy file **protected/extensions/kmail/KMail.php** to **protected/extensions/KMail.php**
 * Add configuration:
 
 ```php
 'components'=>array(
     ...
     'kmail' => array(
-        'class'            => 'application.extensions.KMailExt',
+        'class'            => 'application.extensions.KMail',
 
         // optional configurations
         'viewPath'         => 'application.views.kmail', // path for view-based email templates
-        'dryRun'           => false, // testing option.
+        'dryRun'           => false, // testing option
                                      // if 'dryRun' == true, then it will NOT send out real emails
 
         'transportType'    => "php", // or "smtp"
@@ -38,9 +38,9 @@ Follows singleton pattern to simplify email handling throughout the entire app
 
 ## Usage
 
-* Modify singleton file **KMailExt.php** (example functions included inside)
+* Put email code into file **KMail.php** (example functions included inside)
 * Create and modify view files in `KMail->viewPath` as needed
-* Call function as needed
+* Call functions
 
 ```php
 // example call using manual input
