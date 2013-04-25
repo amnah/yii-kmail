@@ -1,8 +1,11 @@
 KMail
 =============================
 
-Yii email extension using swiftmailer
-Follows singleton pattern to simplify email handling throughout the entire app
+Yii email extension using Swift Mailer. 
+
+This extention follows the singleton pattern to simplify and encapsulate email handling throughout the entire app.
+
+Note that the it is designed for developers to copy and modify the main class file **KMail.php**.
 
 ## Installation
 
