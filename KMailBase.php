@@ -45,10 +45,10 @@ class KMailBase extends CApplicationComponent{
     public function init() {
 
         // register swift's autoloader
-        require_once dirname(__FILE__) . '/swift/lib/classes/Swift.php';
+        require_once dirname(__FILE__) . '/swiftmailer/lib/classes/Swift.php';
         Yii::registerAutoloader(array('Swift','autoload'));
-        require_once dirname(__FILE__). '/swift/lib/swift_init.php';
-//        require_once dirname(__FILE__) . '/swift/lib/swift_required.php';
+        require_once dirname(__FILE__). '/swiftmailer/lib/swift_init.php';
+//        require_once dirname(__FILE__) . '/swiftmailer/lib/swift_required.php';
 
         // set transport to php
         if (strtolower($this->transportType) == "php") {
